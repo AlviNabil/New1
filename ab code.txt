@@ -1,0 +1,216 @@
+#include <stdio.h>
+//Used for handling directory files
+#include <dirent.h>
+//For EXIT codes and error handling
+#include <errno.h>
+#include <stdlib.h>
+#include<string.h>
+#include<sys/dir.h>
+#include<sys/stat.h>
+#include<malloc.h>
+#include <pwd.h>
+#include <grp.h>
+#include <unistd.h>
+#include <time.h>
+void _ls(const char *directory,int ls_a,int ls_l,int ls_t)
+{
+    //Function logic here
+    int num,i=0,total;
+    char **normal,**time;
+    struct stat filest;
+   struct dirent **dire;
+    long int count;
+    
+    num=scandir(".",&dire,0,alphasort);
+    if (num<0)
+	{
+			//If the directory is not found
+			perror("Directory doesn't exist");
+		
+		return;
+	}
+	
+	normal=malloc(num*sizeof(char*));
+	
+	time=malloc(num*sizeof(char*));
+	while(num--){
+	normal[i]=malloc((num)*sizeof(char*));
+	
+	time[i]=malloc((num)*sizeof(char*));
+	strcpy(normal[i],dire[num]->d_name);
+	strcpy(time[i],dire[num]->d_name);
+	i=i+1;
+	
+}
+total=i;
+
+if(ls_a || ls_l){
+while (i--)
+	{
+	
+		//If hidden files are found we continue
+		if (!ls_a && normal[i][0] == '.')
+			continue;
+		//printf("%s  ", d->d_name);
+		
+		//if(op_l) printf("\n");
+		if(ls_l) 
+		{
+	
+		stat(normal[i],&filest);
+		
+		struct passwd *pw=getpwuid(filest.st_uid);
+		struct group *gr=getgrgid(filest.st_gid);
+		
+		  if( S_ISREG(filest.st_mode) )
+                          printf("-");
+                if(S_ISLNK(filest.st_mode)){
+                          printf("l");
+        
+}
+if(S_ISDIR(filest.st_mode)){
+printf("d");
+
+}
+    //printf("Owner permissions: ");
+    if( filest.st_mode & S_IRUSR )
+        printf("r");
+    else{
+    printf("-");
+    }
+    if( filest.st_mode & S_IWUSR )
+        printf("w");
+     else{
+    printf("-");
+    }
+    if( filest.st_mode & S_IXUSR )
+        printf("x");
+   // putchar('\n');
+ else{
+    printf("-");
+    }
+    //printf("Group permissions: ");
+    if( filest.st_mode & S_IRGRP )
+        printf("r");
+     else{
+    printf("-");
+    }
+    if( filest.st_mode & S_IWGRP )
+        printf("w");
+         else{
+    printf("-");
+    }
+    if( filest.st_mode & S_IXGRP )
+        printf("x");
+  
+     else{
+    printf("-");
+    }
+
+    //printf("Others permissions: ");
+    if( filest.st_mode & S_IROTH )
+        printf("r");
+     else{
+    printf("-");
+    }
+    if( filest.st_mode & S_IWOTH )
+        printf("w");
+     else{
+    printf("-");
+    }
+    if( filest.st_mode & S_IXOTH )
+        printf("x  ");
+      else{
+    printf("-  ");
+    }
+	
+          printf("%ld  ",filest.st_nlink);
+		printf("%s   ",pw->pw_name);
+		printf("%s   ",gr->gr_name);
+		printf("%-6ld   ",filest.st_size);
+		struct tm dt;
+		
+    // File modification time
+    dt = *(gmtime(&filest.st_mtime));
+    printf("%d-%d-%d %d:%d:%d  ", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900, 
+                                              dt.tm_hour, dt.tm_min, dt.tm_sec);
+
+	
+		
+		}
+		
+		count+=(long int)(filest.st_blocks/2);
+		printf("%s  ",normal[i]);
+		printf("\n");
+		
+	}
+	if(ls_l)
+	printf("Total Block: %ld\n",count);
+	}
+	
+else{
+
+time_t f,s;
+for(int i=0;i<total-1;i++){
+for(int j=0;j<total-i-1;j++){
+stat(time[j],&filest);
+f=filest.st_mtime;
+stat(time[j+1],&filest);
+s=filest.st_mtime;
+if(f<s){
+
+char *arr;
+arr=time[j];
+time[j]=time[j+1];
+time[j+1]=arr;
+
+
+}
+
+}
+}
+for(int i=0;i<total;i++){
+if(time[i][0]=='.'){
+continue;
+}
+printf("%s\n",time[i]);
+
+
+}
+}
+}
+
+int main(int argc, const char *argv[])
+{
+    //Main Code here
+	if (argc == 1)
+	{
+		_ls(".",0,0,0);
+	}
+else if (argc == 2)
+	{
+		if (argv[1][0] == '-')
+		{
+			//Checking if option is passed
+			//Options supporting: a, l
+			int op_a = 0, op_l = 0,op_t=0;
+			char *p = (char*)(argv[1] + 1);
+			while(*p){
+				if(*p == 'a') op_a = 1;
+				else if(*p == 'l') op_l = 1;
+				else if(*p=='t')op_t=1;
+				else{
+					perror("Option not available");
+					exit(EXIT_FAILURE);
+				}
+				p++;
+			}
+			_ls(".",op_a,op_l,op_t);
+		}
+	}
+	return 0;
+
+}
+
+
+
